@@ -312,9 +312,9 @@ class SimpleProcessPlayer(Player):  # pylint: disable=abstract-method
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        self._wait_for_termination(tag)
+        self._wait_for_termination(tag, 0.0)
 
-    def _wait_for_termination(self, tag: AVTag) -> None:
+    def _wait_for_termination(self, tag: AVTag, return_sleep_duration: float) -> None:
         self._taskman.run_on_main(
             lambda: gui_hooks.av_player_did_begin_playing(self, tag)
         )
@@ -342,6 +342,12 @@ class SimpleProcessPlayer(Player):  # pylint: disable=abstract-method
                         self._process.stdin.close()
                 except Exception as e:
                     print("unable to close stdin:", e)
+                # Despite the process having exited, the kernel audio buffer has 
+                # not necessarily always been flushed by this point,
+                # so abandoning the process prematurely can cause
+                # audio artifacts (specifically on macos).
+                if return_sleep_duration > 0.0:
+                    time.sleep(return_sleep_duration)
                 self._process = None
                 return
             except subprocess.TimeoutExpired:
@@ -486,7 +492,7 @@ class SimpleMplayerSlaveModePlayer(SimpleMplayerPlayer):
             stderr=subprocess.DEVNULL,
             startupinfo=startup_info(),
         )
-        self._wait_for_termination(tag)
+        self._wait_for_termination(tag, 0.0)
 
     def command(self, *args: Any) -> None:
         """Send a command over the slave interface.

@@ -191,7 +191,7 @@ class MacTTSPlayer(TTSProcessPlayer):
         # write the input text to stdin
         self._process.stdin.write(tag.field_text.encode("utf8"))
         self._process.stdin.close()
-        self._wait_for_termination(tag)
+        self._wait_for_termination(tag, 0.2)
 
     def get_available_voices(self) -> list[TTSVoice]:
         cmd = subprocess.run(
@@ -249,7 +249,7 @@ class MacTTSFilePlayer(MacTTSPlayer):
         # write the input text to stdin
         self._process.stdin.write(tag.field_text.encode("utf8"))
         self._process.stdin.close()
-        self._wait_for_termination(tag)
+        self._wait_for_termination(tag, 0.2)
 
     def _on_done(self, ret: Future, cb: OnDoneCallback) -> None:
         ret.result()
